@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Clone</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #70c5ce;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #game-container {
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #000;
+        }
+        canvas {
+            display: block;
+            background-color: #70c5ce;
+        }
+        #start-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+        }
+        #game-container.blur canvas {
+            filter: blur(5px);
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: white;
+            text-shadow: 2px 2px 4px #000;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container" class="blur">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">0</div>
+        <button id="start-button">Start Game</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const context = canvas.getContext("2d");
+        const startButton = document.getElementById("start-button");
+        const scoreDisplay = document.getElementById("score");
+        const gameContainer = document.getElementById("game-container");
+
+        canvas.width = 480;
+        canvas.height = 640;
+
+        let bird, pipes, frame, gameRunning, score;
+
+        function initGame() {
+            bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+            pipes = [];
+            frame = 0;
+            score = 0;
+            gameRunning = false;
+            gameContainer.classList.add('blur');
+            scoreDisplay.innerText = score;
+        }
+
+        function drawBird() {
+            context.fillStyle = "yellow";
+            context.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            if (bird.y + bird.height > canvas.height || bird.y < 0) resetGame();
+        }
+
+        function drawPipes() {
+            context.fillStyle = "green";
+            pipes.forEach(pipe => {
+                context.fillRect(pipe.x, 0, 40, pipe.top);
+                context.fillRect(pipe.x, canvas.height - pipe.bottom, 40, pipe.bottom);
+            });
+        }
+
+        function updatePipes() {
+            if (frame % 90 === 0) {
+                let top = Math.random() * (canvas.height / 2);
+                let bottom = canvas.height - top - 150;
+                pipes.push({ x: canvas.width, top: top, bottom: bottom });
+            }
+            pipes.forEach((pipe, i) => {
+                pipe.x -= 2;
+                if (pipe.x + 40 < 0) pipes.splice(i, 1);
+                if (pipe.x === bird.x) {
+                    score++;
+                    scoreDisplay.innerText = score;
+                }
+                if (bird.x < pipe.x + 40 && bird.x + bird.width > pipe.x && (bird.y < pipe.top || bird.y + bird.height > canvas.height - pipe.bottom)) resetGame();
+            });
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            gameContainer.classList.add('blur');
+            startButton.style.display = "block";
+            initGame();
+        }
+
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawBird();
+            drawPipes();
+        }
+
+        function update() {
+            updateBird();
+            updatePipes();
+        }
+
+        function loop() {
+            if (gameRunning) {
+                draw();
+                update();
+                frame++;
+                requestAnimationFrame(loop);
+            }
+        }
+
+        canvas.addEventListener("click", () => {
+            if (gameRunning) bird.velocity = bird.lift;
+        });
+
+        startButton.addEventListener("click", () => {
+            gameRunning = true;
+            startButton.style.display = "none";
+            gameContainer.classList.remove('blur');
+            loop();
+        });
+
+        initGame();
+    </script>
+</body>
+</html>
